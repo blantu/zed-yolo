@@ -7,6 +7,13 @@ if(COMMAND cmake_policy)
 	cmake_policy(SET CMP0015 OLD)
 endif(COMMAND cmake_policy)
 
+IF (WIN32)
+	SET(OpenCV_DIR "D:/CV/opencv/build/x64/vc15/lib")
+	SET(darknet_libs yolo_cpp_dll)
+ELSEIF (UNIX)
+	SET(darknet_libs darknet)
+ENDIF ()
+
 SET(EXECUTABLE_OUTPUT_PATH ".")
 
 find_package(ZED 2 REQUIRED)
@@ -26,6 +33,7 @@ include_directories(${OPENCV_INCLUDE_DIRS})
 link_directories(${ZED_LIBRARY_DIR})
 link_directories(${CUDA_LIBRARY_DIRS})
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../libdarknet/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../libdarknet/build/darknet/x64)
 link_directories(${OpenCV_LIBRARY_DIRS})
 
 FILE(GLOB_RECURSE SRC_FILES src/*.cpp)
@@ -38,5 +46,5 @@ TARGET_LINK_LIBRARIES(${execName}
                         ${ZED_LIBRARIES}
                         ${SPECIAL_OS_LIBS}
                         ${OpenCV_LIBRARIES}
-                        darknet
+                        ${darknet_libs}
                         ${CUDA_CUDA_LIBRARY} ${CUDA_CUDART_LIBRARY} ${CUDA_NPP_LIBRARIES_ZED})

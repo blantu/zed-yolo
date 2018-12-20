@@ -198,10 +198,21 @@ int main(int argc, char *argv[]) {
     new_data = false;
 
     std::thread detect_thread(detectorThread, cfg_file, weights_file, thresh);
+	Sleep(5000);
+	auto zed_image_size = zed.getResolution();
+	cv::VideoWriter outputVideo;
+	outputVideo.open("./record.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), zed.getCameraFPS(), cv::Size(zed_image_size.width, zed_image_size.height), true);
+	if (outputVideo.isOpened())
+		std::cout << "recording..." << std::endl;
+	else
+		std::cout << "video output failed" << std::endl;
 
     while (!exit_flag) {
 
         if (zed.grab() == sl::SUCCESS) {
+			int64 timeTotal=0, frameCounter=0;
+			int64 frameTime = cv::getTickCount();
+
             zed.retrieveImage(left);
             data_lock.lock();
             cur_frame = slMat2cvMat(left);
@@ -215,14 +226,22 @@ int main(int argc, char *argv[]) {
             data_lock.unlock();
 
             draw_boxes(cur_frame, result_vec_draw, obj_names);
-            cv::imshow("ZED", cur_frame);
+
+			frameTime = cv::getTickCount() - frameTime;
+			timeTotal += frameTime;
+			frameCounter++;
+
+			double s = frameCounter / (timeTotal / cv::getTickFrequency());
+			cv::putText(cur_frame, "fps:" + std::to_string(s), cv::Point(5, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 0, 255));
+			cv::imshow("ZED", cur_frame);
+			outputVideo << cur_frame;
         }
 
         int key = cv::waitKey(15); // 3 or 16ms
         if (key == 'p') while (true) if (cv::waitKey(100) == 'p') break;
         if (key == 27 || key == 'q') exit_flag = true;
     }
-
+	outputVideo.release();
     detect_thread.join();
     zed.close();
     return 0;
